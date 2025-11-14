@@ -59,40 +59,23 @@ app.get('/test-db', (req, res) => {
 // ===== AUTH API =====
 
 // Login staf
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;
     
     const sql = 'SELECT * FROM staf WHERE username = ?';
-    db.query(sql, [username], async (err, results) => {
+    db.query(sql, [username], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         if (results.length === 0) {
             return res.status(401).json({ 
                 success: false,
-                message: 'Username atau password salah' 
+                message: 'Username tidak ditemukan' 
             });
         }
         
         const staf = results[0];
         
-        // Check password - support both plain text (untuk demo) dan bcrypt hash
-        let passwordMatch = false;
-        
-        // Coba plain text dulu (untuk demo/testing)
+        // Check password - langsung compare dengan yang di database
         if (password === staf.password) {
-            passwordMatch = true;
-        } 
-        // Kalau ga cocok, coba bcrypt
-        else {
-            try {
-                const bcrypt = require('bcryptjs');
-                passwordMatch = await bcrypt.compare(password, staf.password);
-            } catch (e) {
-                // Kalau bcrypt error, skip
-                passwordMatch = false;
-            }
-        }
-        
-        if (passwordMatch) {
             res.json({
                 success: true,
                 message: 'Login berhasil',
@@ -106,7 +89,7 @@ app.post('/api/auth/login', async (req, res) => {
         } else {
             res.status(401).json({ 
                 success: false,
-                message: 'Username atau password salah' 
+                message: 'Password salah' 
             });
         }
     });
