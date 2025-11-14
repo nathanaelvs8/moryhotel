@@ -59,11 +59,11 @@ app.get('/test-db', (req, res) => {
 // ===== AUTH API =====
 
 // Login staf
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { username, password } = req.body;
     
     const sql = 'SELECT * FROM staf WHERE username = ?';
-    db.query(sql, [username], (err, results) => {
+    db.query(sql, [username], async (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         if (results.length === 0) {
             return res.status(401).json({ 
@@ -73,9 +73,24 @@ app.post('/api/auth/login', (req, res) => {
         }
         
         const staf = results[0];
+        let passwordMatch = false;
         
-        // Check password - langsung compare dengan yang di database
-        if (password === staf.password) {
+        // Check if password is bcrypt hash (starts with $2y$ or $2a$ or $2b$)
+        if (staf.password.startsWith('$2')) {
+            // Password is bcrypt hash - use bcrypt to compare
+            const bcrypt = require('bcryptjs');
+            try {
+                passwordMatch = await bcrypt.compare(password, staf.password);
+            } catch (e) {
+                console.error('Bcrypt error:', e);
+                passwordMatch = false;
+            }
+        } else {
+            // Password is plain text - direct compare
+            passwordMatch = (password === staf.password);
+        }
+        
+        if (passwordMatch) {
             res.json({
                 success: true,
                 message: 'Login berhasil',
