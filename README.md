@@ -1,83 +1,17 @@
-# 🏨 Mory Hotel - Sistem Reservasi Hotel
+# 🚀 Setup Instructions - Mory Hotel
 
-Sistem manajemen reservasi hotel berbasis web dengan RESTful API dan Admin Dashboard.
-
-## 📁 Struktur Folder
-
-```
-moryhotel/
-├── node_modules/          (auto-generated, jangan di-push ke GitHub)
-├── public/                (Frontend files)
-│   ├── css/
-│   │   ├── style.css      (Global styles)
-│   │   └── admin.css      (Admin-specific styles)
-│   ├── js/
-│   │   ├── config.js      (API configuration)
-│   │   ├── auth.js        (Authentication logic)
-│   │   └── admin.js       (Admin utility functions)
-│   ├── login.html         (Login page)
-│   ├── dashboard.html     (Dashboard)
-│   └── reservasi.html     (Reservasi management)
-├── server.js              (Backend API)
-├── db.js                  (Database configuration)
-├── package.json
-├── package-lock.json
-└── .gitignore
-```
-
-## 🚀 Setup Local
-
-### 1. Install Dependencies
-
-```bash
-cd C:\Users\user\moryhotel
-npm install
-```
-
-### 2. Configure Database
-
-Edit `db.js` kalau mau test di local dengan database local:
-
-```javascript
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'hotel_db',
-    port: 3306
-});
-```
-
-### 3. Run Server
-
-```bash
-npm start
-```
-
-atau
-
-```bash
-node server.js
-```
-
-### 4. Test di Browser
-
-- API: `http://localhost:3000`
-- Login: `http://localhost:3000/login.html`
-
-## 🌐 Deploy ke Railway
+## Langkah Setup dari Awal
 
 ### 1. Push ke GitHub
 
 ```bash
-# Pastikan sudah di folder project
 cd C:\Users\user\moryhotel
 
 # Add semua file
 git add .
 
 # Commit
-git commit -m "Add complete hotel management system"
+git commit -m "Fix login and add complete setup"
 
 # Push
 git push origin main
@@ -85,237 +19,165 @@ git push origin main
 
 ### 2. Railway Auto-Deploy
 
-Railway akan otomatis:
-- Detect perubahan
-- Install dependencies (`npm install`)
-- Run `node server.js`
-- Deploy ke production
+Railway akan otomatis detect dan deploy dalam 1-2 menit.
 
-### 3. Environment Variables di Railway
+### 3. Setup Database di Railway MySQL
 
-Pastikan variables ini sudah diset di Railway:
+Setelah deploy selesai, import database schema:
 
-```
-DB_HOST = mysql.railway.internal
-DB_PORT = 3306
-DB_USER = root
-DB_PASSWORD = [password dari Railway MySQL]
-DB_NAME = railway
-```
+#### **Via MySQL Workbench:**
 
-### 4. Update API URL
+1. **Download MySQL Workbench**: https://dev.mysql.com/downloads/workbench/
 
-Setelah deploy, URL Railway lu akan jadi: `https://xxx.up.railway.app`
+2. **Buat Connection Baru:**
+   - Connection Name: `Railway Mory Hotel`
+   - Hostname: `mysql.railway.internal` (atau dari Railway variables)
+   - Port: `3306`
+   - Username: `root`  
+   - Password: `[dari Railway MySQL variables]`
+   - Default Schema: `railway`
 
-File `public/js/config.js` sudah handle ini otomatis:
-- Local: `http://localhost:3000`
-- Production: Pake hostname Railway
+3. **Connect & Run Schema:**
+   - File → Open SQL Script → pilih `schema.sql`
+   - Execute (⚡ icon)
 
-## 📝 Fitur
+4. **Insert Data Staf:**
+   - File → Open SQL Script → pilih `insert_staf.sql`
+   - Execute (⚡ icon)
 
-### Backend API
+#### **Via Railway Data Tab:**
 
-✅ **Authentication**
-- Login staf dengan username & password
-- Session management dengan localStorage
+1. Buka Railway Dashboard
+2. Klik service **MySQL**
+3. Tab **"Database"** → **"Data"**
+4. Klik **"Connect"** atau icon Query
+5. Copy-paste isi `schema.sql`
+6. Run
+7. Copy-paste isi `insert_staf.sql`
+8. Run
 
-✅ **Dashboard Statistics**
-- Total tamu
-- Kamar tersedia vs total
-- Reservasi aktif
-- Pendapatan bulan ini
-
-✅ **Manajemen Tipe Kamar**
-- CRUD operations
-- View all, create, update, delete
-
-✅ **Manajemen Kamar**
-- CRUD operations
-- Filter kamar tersedia
-- Update status kamar
-
-✅ **Manajemen Tamu**
-- CRUD operations
-- Data tamu lengkap
-
-✅ **Manajemen Reservasi**
-- Create reservasi baru
-- Update status (Dipesan → Check-in → Selesai)
-- Cancel/batalkan reservasi
-- Auto-generate kode booking
-- Auto-update status kamar
-
-✅ **Pembayaran**
-- Record pembayaran
-- Multiple metode pembayaran
-
-### Frontend Dashboard
-
-✅ **Login System**
-- Secure authentication
-- Remember user session
-
-✅ **Dashboard**
-- Real-time statistics
-- Recent reservations table
-- User info display
-
-✅ **Reservasi Management**
-- Add new reservasi via modal
-- Update status via modal
-- Cancel reservasi
-- Auto-populate dropdowns (tamu, kamar)
-
-✅ **Responsive Design**
-- Mobile-friendly
-- Tablet-optimized
-
-## 🎨 Customization
-
-### Ganti Warna Theme
-
-Edit `public/css/admin.css`:
-
-```css
-/* Ubah gradient warna sidebar */
-.sidebar {
-    background: linear-gradient(135deg, #YOUR_COLOR1 0%, #YOUR_COLOR2 100%);
-}
-```
-
-### Update API URL
-
-Edit `public/js/config.js`:
-
-```javascript
-const API_URL = 'https://your-railway-url.up.railway.app';
-```
-
-## 📡 API Endpoints
-
-### Authentication
-```
-POST /api/auth/login
-Body: { username, password }
-```
-
-### Dashboard
-```
-GET /api/dashboard/stats
-```
-
-### Tipe Kamar
-```
-GET    /api/tipe-kamar          # Get all
-GET    /api/tipe-kamar/:id      # Get by ID
-POST   /api/tipe-kamar          # Create
-PUT    /api/tipe-kamar/:id      # Update
-DELETE /api/tipe-kamar/:id      # Delete
-```
-
-### Kamar
-```
-GET    /api/kamar               # Get all
-GET    /api/kamar/tersedia      # Get available
-POST   /api/kamar               # Create
-PUT    /api/kamar/:id           # Update
-DELETE /api/kamar/:id           # Delete
-```
-
-### Tamu
-```
-GET    /api/tamu                # Get all
-GET    /api/tamu/:id            # Get by ID
-POST   /api/tamu                # Create
-PUT    /api/tamu/:id            # Update
-DELETE /api/tamu/:id            # Delete
-```
-
-### Reservasi
-```
-GET    /api/reservasi           # Get all
-GET    /api/reservasi/:id       # Get by ID
-POST   /api/reservasi           # Create
-PUT    /api/reservasi/:id/status # Update status
-DELETE /api/reservasi/:id       # Cancel
-```
-
-### Pembayaran
-```
-GET    /api/pembayaran          # Get all
-POST   /api/pembayaran          # Create
-```
-
-## 🔐 Login Demo
-
-**Username:** `admin`  
-**Password:** `admin123`
-
-## 🗄️ Database Schema
-
-```sql
--- Tables
-tipe_kamar    (id, nama_tipe, harga, deskripsi, fasilitas)
-kamar         (id, no_kamar, id_tipe_kamar, status)
-tamu          (id, nama, email, no_telepon, alamat)
-staf          (id, nama, username, password, peran)
-reservasi     (id, kode_booking, id_tamu, id_kamar, id_staf, 
-               tanggal_check_in, tanggal_check_out, total, status)
-pembayaran    (id, id_reservasi, tanggal, jumlah, metode, status)
-```
-
-## 🐛 Troubleshooting
-
-### Frontend ga bisa konek ke API
-
-1. Cek `public/js/config.js` - pastikan API_URL benar
-2. Cek CORS di `server.js`
-3. Cek Railway logs
-
-### Database connection failed
-
-1. Cek environment variables di Railway
-2. Pastikan MySQL service running
-3. Cek credentials di Railway MySQL Variables
-
-### Login gagal
-
-1. Cek database: `SELECT * FROM staf WHERE username = 'admin'`
-2. Pastikan ada data staf
-3. Password default: `admin123`
-
-### Modal tidak muncul
-
-1. Cek console browser (F12)
-2. Pastikan file JS ter-load semua
-3. Clear browser cache
-
-## 🔄 Update Code
-
-Kalau ada perubahan code:
+#### **Via Terminal (Advanced):**
 
 ```bash
-git add .
-git commit -m "Update: deskripsi perubahan"
-git push origin main
+# Connect ke Railway MySQL
+mysql -h mysql.railway.internal -P 3306 -u root -p railway < schema.sql
+mysql -h mysql.railway.internal -P 3306 -u root -p railway < insert_staf.sql
+
+# Atau dengan public URL
+mysql -h [MYSQLHOST dari Railway] -P [MYSQLPORT] -u root -p railway < schema.sql
 ```
 
-Railway auto-deploy dalam 1-2 menit.
+### 4. Test Login
 
-## 📞 Support
+Buka: `https://[your-railway-url].up.railway.app/`
 
-Issues? Contact developer atau cek:
-- Railway logs: `railway logs`
-- Browser console: F12 → Console
-- Network tab: F12 → Network
+**Login Credentials:**
 
-## 📄 License
-
-MIT License - Free to use & modify!
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | `admin` | `admin123` |
+| Resepsionis | `resepsionis` | `resepsi123` |
+| Manager | `manager` | `manager123` |
 
 ---
 
-**Made with ❤️ for Mory Hotel**
+## 🔧 Troubleshooting
 
-**Version:** 2.0  
-**Last Update:** 2025
+### Error: "Username atau password salah"
+
+**Penyebab:** Data staf belum ada di database atau password tidak match.
+
+**Solusi:**
+1. Cek database: `SELECT * FROM staf;`
+2. Pastikan ada data staf
+3. Run script `insert_staf.sql`
+
+### Error: "Failed to load resource: 404"
+
+**Penyebab:** Frontend belum ter-deploy atau folder `public/` tidak ada.
+
+**Solusi:**
+1. Pastikan folder `public/` ada di GitHub repo
+2. Check Railway logs: ada error saat build/deploy?
+3. Pastikan `app.use(express.static('public'));` ada di server.js
+
+### Error: "Database connection failed"
+
+**Penyebab:** Environment variables belum di-set di Railway.
+
+**Solusi:**
+1. Buka Railway → service Node.js → Variables
+2. Pastikan ada:
+   - `DB_HOST`
+   - `DB_PORT`
+   - `DB_USER`
+   - `DB_PASSWORD`
+   - `DB_NAME`
+3. Nilai ambil dari MySQL service variables
+
+---
+
+## 📋 Checklist Setup
+
+Cek satu-satu:
+
+- [ ] Code sudah di-push ke GitHub
+- [ ] Railway deployment status: **Success**
+- [ ] Environment variables sudah di-set di Railway
+- [ ] Database schema sudah di-import (`schema.sql`)
+- [ ] Data staf sudah di-insert (`insert_staf.sql`)
+- [ ] Bisa akses homepage: `https://[url].up.railway.app/`
+- [ ] Bisa login dengan username: `admin`, password: `admin123`
+- [ ] Dashboard muncul setelah login
+
+---
+
+## 🎯 Quick Test Commands
+
+### Test API Endpoints:
+
+```bash
+# Test root (harus redirect ke /login.html)
+curl https://[your-url].up.railway.app/
+
+# Test database connection
+curl https://[your-url].up.railway.app/test-db
+
+# Test login
+curl -X POST https://[your-url].up.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# Test get tipe kamar
+curl https://[your-url].up.railway.app/api/tipe-kamar
+```
+
+---
+
+## 🔐 Security Note
+
+⚠️ **PENTING:** Password di database saat ini menggunakan **plain text** untuk kemudahan testing/development.
+
+Untuk **production**, sebaiknya ganti dengan **bcrypt hash**:
+
+```sql
+-- Generate bcrypt hash untuk password (gunakan online tool atau code)
+-- Hash untuk "admin123": $2a$10$[hash_string]
+
+UPDATE staf 
+SET password = '$2a$10$[bcrypt_hash_password]' 
+WHERE username = 'admin';
+```
+
+Code di `server.js` sudah support both plain text dan bcrypt hash.
+
+---
+
+## 📞 Need Help?
+
+Kalau masih error:
+1. Screenshot error di browser console (F12)
+2. Check Railway deployment logs
+3. Verify database connection via MySQL client
+
+**Happy Coding! 🚀**
