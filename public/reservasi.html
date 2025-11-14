@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Reservasi - Mory Hotel</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏨 Mory Hotel</h2>
+            <p>Admin Panel</p>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li><a href="/dashboard.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="/reservasi.html" class="active"><span>📅</span> Reservasi</a></li>
+            <li><a href="/kamar.html"><span>🛏️</span> Kelola Kamar</a></li>
+            <li><a href="/tipe-kamar.html"><span>🏷️</span> Tipe Kamar</a></li>
+            <li><a href="/tamu.html"><span>👥</span> Data Tamu</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Kelola Reservasi</h1>
+            <button class="btn btn-primary" onclick="showAddModal()">+ Tambah Reservasi</button>
+        </div>
+
+        <div class="content-box">
+            <div id="loadingData" class="loading">Memuat data</div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Kode Booking</th>
+                        <th>Nama Tamu</th>
+                        <th>Tipe Kamar</th>
+                        <th>No. Kamar</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Add Reservasi -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tambah Reservasi</h2>
+                <button class="close-modal" onclick="closeModal('formModal')">&times;</button>
+            </div>
+
+            <form id="reservasiForm">
+                <div class="form-group">
+                    <label>Kode Booking</label>
+                    <input type="text" id="kode_booking" required readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Tamu</label>
+                    <select id="id_tamu" required>
+                        <option value="">Pilih Tamu</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Kamar</label>
+                    <select id="id_kamar" required>
+                        <option value="">Pilih Kamar</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Tanggal Check-in</label>
+                    <input type="date" id="tanggal_check_in" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Tanggal Check-out</label>
+                    <input type="date" id="tanggal_check_out" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Total Biaya (Rp)</label>
+                    <input type="number" id="total_biaya" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('formModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Update Status -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Update Status Reservasi</h2>
+                <button class="close-modal" onclick="closeModal('statusModal')">&times;</button>
+            </div>
+
+            <form id="statusForm">
+                <input type="hidden" id="status_id_reservasi">
+                
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status_reservasi" required>
+                        <option value="Dipesan">Dipesan</option>
+                        <option value="Check-in">Check-in</option>
+                        <option value="Selesai">Selesai</option>
+                        <option value="Dibatalkan">Dibatalkan</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('statusModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+        // Check authentication
+        checkAuth();
+        const user = getCurrentUser();
+
+        // Load data
+        async function loadData() {
+            try {
+                const data = await getData('/api/reservasi');
+                
+                const tbody = document.getElementById('dataBody');
+                
+                const columns = [
+                    { field: 'kode_booking' },
+                    { field: 'nama_lengkap' },
+                    { field: 'nama_tipe' },
+                    { field: 'no_kamar' },
+                    { 
+                        field: 'tanggal_check_in',
+                        render: (row) => new Date(row.tanggal_check_in).toLocaleDateString('id-ID')
+                    },
+                    { 
+                        field: 'tanggal_check_out',
+                        render: (row) => new Date(row.tanggal_check_out).toLocaleDateString('id-ID')
+                    },
+                    { 
+                        field: 'total_biaya',
+                        render: (row) => 'Rp ' + parseInt(row.total_biaya).toLocaleString('id-ID')
+                    },
+                    { 
+                        field: 'status_reservasi',
+                        render: (row) => `<span class="badge ${getStatusBadgeClass(row.status_reservasi)}">${row.status_reservasi}</span>`
+                    },
+                    {
+                        field: 'actions',
+                        render: (row) => `
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-info" onclick="updateStatus(${row.id_reservasi}, '${row.status_reservasi}')">Status</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteData(${row.id_reservasi})">Batal</button>
+                            </div>
+                        `
+                    }
+                ];
+                
+                renderTable(data, columns, tbody);
+                
+                hideLoading('loadingData');
+                document.getElementById('dataTable').style.display = 'table';
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Gagal memuat data');
+            }
+        }
+
+        // Load dropdown options
+        async function loadDropdowns() {
+            try {
+                // Load tamu
+                const tamuData = await getData('/api/tamu');
+                const tamuSelect = document.getElementById('id_tamu');
+                tamuSelect.innerHTML = '<option value="">Pilih Tamu</option>';
+                tamuData.forEach(tamu => {
+                    tamuSelect.innerHTML += `<option value="${tamu.id_tamu}">${tamu.nama_lengkap} - ${tamu.no_telepon || ''}</option>`;
+                });
+
+                // Load kamar tersedia
+                const kamarData = await getData('/api/kamar/tersedia');
+                const kamarSelect = document.getElementById('id_kamar');
+                kamarSelect.innerHTML = '<option value="">Pilih Kamar</option>';
+                kamarData.forEach(kamar => {
+                    kamarSelect.innerHTML += `<option value="${kamar.id_kamar}">No. ${kamar.no_kamar} - ${kamar.nama_tipe} (${formatCurrency(kamar.harga_per_malam)}/malam)</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading dropdowns:', error);
+            }
+        }
+
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('reservasiForm').reset();
+            document.getElementById('kode_booking').value = generateBookingCode();
+            loadDropdowns();
+            openModal('formModal');
+        }
+
+        // Submit form
+        document.getElementById('reservasiForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                kode_booking: document.getElementById('kode_booking').value,
+                id_tamu: document.getElementById('id_tamu').value,
+                id_kamar: document.getElementById('id_kamar').value,
+                id_staf: user.id_staf,
+                tanggal_check_in: document.getElementById('tanggal_check_in').value,
+                tanggal_check_out: document.getElementById('tanggal_check_out').value,
+                total_biaya: document.getElementById('total_biaya').value
+            };
+            
+            try {
+                const result = await postData('/api/reservasi', data);
+                
+                if (result.success) {
+                    showSuccess('Reservasi berhasil ditambahkan!');
+                    closeModal('formModal');
+                    loadData();
+                } else {
+                    showError('Gagal menambahkan reservasi');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        });
+
+        // Update status
+        function updateStatus(id, currentStatus) {
+            document.getElementById('status_id_reservasi').value = id;
+            document.getElementById('status_reservasi').value = currentStatus;
+            openModal('statusModal');
+        }
+
+        // Submit status form
+        document.getElementById('statusForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('status_id_reservasi').value;
+            const status = document.getElementById('status_reservasi').value;
+            
+            try {
+                const result = await putData(`/api/reservasi/${id}/status`, { status_reservasi: status });
+                
+                if (result.success) {
+                    showSuccess('Status berhasil diupdate!');
+                    closeModal('statusModal');
+                    loadData();
+                } else {
+                    showError('Gagal update status');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        });
+
+        // Delete data
+        async function deleteData(id) {
+            if (!confirm('Yakin ingin membatalkan reservasi ini?')) return;
+            
+            try {
+                const result = await deleteData(`/api/reservasi/${id}`);
+                
+                if (result.success) {
+                    showSuccess('Reservasi berhasil dibatalkan!');
+                    loadData();
+                } else {
+                    showError('Gagal membatalkan reservasi');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        }
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>

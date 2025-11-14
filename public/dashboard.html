@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Mory Hotel</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏨 Mory Hotel</h2>
+            <p>Admin Panel</p>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li><a href="/dashboard.html" class="active"><span>📊</span> Dashboard</a></li>
+            <li><a href="/reservasi.html"><span>📅</span> Reservasi</a></li>
+            <li><a href="/kamar.html"><span>🛏️</span> Kelola Kamar</a></li>
+            <li><a href="/tipe-kamar.html"><span>🏷️</span> Tipe Kamar</a></li>
+            <li><a href="/tamu.html"><span>👥</span> Data Tamu</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <div>
+                    <div style="font-weight: 600;" id="userName">Admin</div>
+                    <div style="font-size: 12px; color: #666;" id="userRole">Administrator</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-card-header">
+                    <div>
+                        <h3>Total Tamu</h3>
+                        <div class="value" id="totalTamu">-</div>
+                    </div>
+                    <div class="stat-icon">👥</div>
+                </div>
+            </div>
+
+            <div class="stat-card green">
+                <div class="stat-card-header">
+                    <div>
+                        <h3>Kamar Tersedia</h3>
+                        <div class="value" id="kamarTersedia">-</div>
+                    </div>
+                    <div class="stat-icon">🛏️</div>
+                </div>
+            </div>
+
+            <div class="stat-card orange">
+                <div class="stat-card-header">
+                    <div>
+                        <h3>Reservasi Aktif</h3>
+                        <div class="value" id="reservasiAktif">-</div>
+                    </div>
+                    <div class="stat-icon">📅</div>
+                </div>
+            </div>
+
+            <div class="stat-card purple">
+                <div class="stat-card-header">
+                    <div>
+                        <h3>Pendapatan Bulan Ini</h3>
+                        <div class="value" id="pendapatan">-</div>
+                    </div>
+                    <div class="stat-icon">💰</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reservations -->
+        <div class="content-box">
+            <h2>Reservasi Terbaru</h2>
+            <div id="loadingReservasi" class="loading">Memuat data</div>
+            <table id="reservasiTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Kode Booking</th>
+                        <th>Nama Tamu</th>
+                        <th>No. Kamar</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="reservasiBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+        // Check authentication
+        checkAuth();
+        displayUserInfo();
+
+        // Load dashboard stats
+        async function loadStats() {
+            try {
+                const data = await getData('/api/dashboard/stats');
+                
+                document.getElementById('totalTamu').textContent = data.total_tamu || 0;
+                document.getElementById('kamarTersedia').textContent = `${data.kamar_tersedia}/${data.total_kamar}`;
+                document.getElementById('reservasiAktif').textContent = data.reservasi_aktif || 0;
+                document.getElementById('pendapatan').textContent = formatCurrency(data.pendapatan_bulan_ini || 0);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load recent reservations
+        async function loadReservations() {
+            try {
+                const data = await getData('/api/reservasi');
+                
+                const tbody = document.getElementById('reservasiBody');
+                const recentReservations = data.slice(0, 5);
+                
+                const columns = [
+                    { field: 'kode_booking' },
+                    { field: 'nama_lengkap' },
+                    { field: 'no_kamar' },
+                    { 
+                        field: 'tanggal_check_in',
+                        render: (row) => new Date(row.tanggal_check_in).toLocaleDateString('id-ID')
+                    },
+                    { 
+                        field: 'tanggal_check_out',
+                        render: (row) => new Date(row.tanggal_check_out).toLocaleDateString('id-ID')
+                    },
+                    { 
+                        field: 'total_biaya',
+                        render: (row) => 'Rp ' + parseInt(row.total_biaya).toLocaleString('id-ID')
+                    },
+                    { 
+                        field: 'status_reservasi',
+                        render: (row) => `<span class="badge ${getStatusBadgeClass(row.status_reservasi)}">${row.status_reservasi}</span>`
+                    }
+                ];
+                
+                renderTable(recentReservations, columns, tbody);
+                
+                hideLoading('loadingReservasi');
+                document.getElementById('reservasiTable').style.display = 'table';
+            } catch (error) {
+                console.error('Error loading reservations:', error);
+                document.getElementById('loadingReservasi').textContent = 'Gagal memuat data';
+            }
+        }
+
+        // Load data on page load
+        loadStats();
+        loadReservations();
+    </script>
+</body>
+</html>
