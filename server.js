@@ -492,14 +492,27 @@ app.post('/api/reservasi', (req, res) => {
         db.query(insertSql, [kode_booking, id_tamu, id_kamar, id_staf, tanggal_check_in, tanggal_check_out, total_biaya], (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             
-            // Update status kamar jadi 'Dipesan'
-            db.query('UPDATE kamar SET status_kamar = "Dipesan" WHERE id_kamar = ?', [id_kamar]);
+            const id_reservasi = result.insertId;
+            
+            // Update status kamar jadi 'Dipesan' (belum check-in)
+            db.query('UPDATE kamar SET status_kamar = "Dipesan" WHERE id_kamar = ?', [id_kamar], (updateErr) => {
+                if (updateErr) console.error('Error updating kamar status:', updateErr);
+            });
+            
+            // Otomatis buat record pembayaran dengan status "Belum Bayar"
+            const paymentSql = `
+                INSERT INTO pembayaran (id_reservasi, jumlah_pembayaran, status_pembayaran)
+                VALUES (?, ?, 'Belum Bayar')
+            `;
+            db.query(paymentSql, [id_reservasi, total_biaya], (paymentErr) => {
+                if (paymentErr) console.error('Error creating payment record:', paymentErr);
+            });
             
             res.status(201).json({ 
                 success: true,
                 message: 'Reservasi berhasil dibuat',
                 kode_booking: kode_booking,
-                id: result.insertId 
+                id: id_reservasi
             });
         });
     });
@@ -522,16 +535,23 @@ app.put('/api/reservasi/:id/status', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             
             // Update status kamar based on reservasi status
-            let status_kamar = 'Tersedia';
-            if (status_reservasi === 'Dipesan' || status_reservasi === 'Check-in') {
+            let status_kamar;
+            
+            if (status_reservasi === 'Selesai' || status_reservasi === 'Dibatalkan') {
+                // Check-out atau cancel → Kamar jadi Tersedia
+                status_kamar = 'Tersedia';
+            } else {
+                // Dipesan atau Check-in → Kamar tetap Dipesan
                 status_kamar = 'Dipesan';
             }
             
-            db.query('UPDATE kamar SET status_kamar = ? WHERE id_kamar = ?', [status_kamar, reservasi.id_kamar]);
+            db.query('UPDATE kamar SET status_kamar = ? WHERE id_kamar = ?', [status_kamar, reservasi.id_kamar], (updateErr) => {
+                if (updateErr) console.error('Error updating kamar status:', updateErr);
+            });
             
             res.json({ 
                 success: true,
-                message: 'Status reservasi berhasil diupdate' 
+                message: 'Status reservasi berhasil diupdate'
             });
         });
     });
@@ -552,8 +572,10 @@ app.delete('/api/reservasi/:id', (req, res) => {
         db.query('UPDATE reservasi SET status_reservasi = "Dibatalkan" WHERE id_reservasi = ?', [id], (err) => {
             if (err) return res.status(500).json({ error: err.message });
             
-            // Update status kamar to Tersedia
-            db.query('UPDATE kamar SET status_kamar = "Tersedia" WHERE id_kamar = ?', [reservasi.id_kamar]);
+            // Update status kamar to Tersedia (available lagi)
+            db.query('UPDATE kamar SET status_kamar = "Tersedia" WHERE id_kamar = ?', [reservasi.id_kamar], (updateErr) => {
+                if (updateErr) console.error('Error updating kamar status:', updateErr);
+            });
             
             res.json({ 
                 success: true,
@@ -568,15 +590,40 @@ app.delete('/api/reservasi/:id', (req, res) => {
 // GET semua pembayaran
 app.get('/api/pembayaran', (req, res) => {
     const sql = `
-        SELECT p.*, r.kode_booking, t.nama_lengkap
+        SELECT p.*, 
+               r.kode_booking, r.tanggal_check_in, r.tanggal_check_out, r.total_biaya,
+               t.nama_lengkap, t.no_telepon,
+               k.no_kamar,
+               tk.nama_tipe
         FROM pembayaran p
         JOIN reservasi r ON p.id_reservasi = r.id_reservasi
         JOIN tamu t ON r.id_tamu = t.id_tamu
+        JOIN kamar k ON r.id_kamar = k.id_kamar
+        JOIN tipe_kamar tk ON k.id_tipe_kamar = tk.id_tipe_kamar
         ORDER BY p.id_pembayaran DESC
     `;
     db.query(sql, (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
+    });
+});
+
+// GET pembayaran by ID
+app.get('/api/pembayaran/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = `
+        SELECT p.*, 
+               r.kode_booking, r.total_biaya,
+               t.nama_lengkap
+        FROM pembayaran p
+        JOIN reservasi r ON p.id_reservasi = r.id_reservasi
+        JOIN tamu t ON r.id_tamu = t.id_tamu
+        WHERE p.id_pembayaran = ?
+    `;
+    db.query(sql, [id], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (results.length === 0) return res.status(404).json({ message: 'Pembayaran tidak ditemukan' });
+        res.json(results[0]);
     });
 });
 
@@ -595,6 +642,25 @@ app.post('/api/pembayaran', (req, res) => {
             success: true,
             message: 'Pembayaran berhasil dicatat',
             id: result.insertId 
+        });
+    });
+});
+
+// PUT update pembayaran
+app.put('/api/pembayaran/:id', (req, res) => {
+    const { id } = req.params;
+    const { tanggal_pembayaran, jumlah_pembayaran, metode_pembayaran, status_pembayaran } = req.body;
+    const sql = `
+        UPDATE pembayaran 
+        SET tanggal_pembayaran = ?, jumlah_pembayaran = ?, metode_pembayaran = ?, status_pembayaran = ?
+        WHERE id_pembayaran = ?
+    `;
+    
+    db.query(sql, [tanggal_pembayaran, jumlah_pembayaran, metode_pembayaran, status_pembayaran, id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ 
+            success: true,
+            message: 'Pembayaran berhasil diupdate' 
         });
     });
 });

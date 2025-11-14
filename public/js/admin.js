@@ -58,7 +58,7 @@ function getStatusBadgeClass(status) {
         'Selesai': 'success',
         'Dibatalkan': 'danger',
         'Tersedia': 'success',
-        'Perawatan': 'warning',
+        'Perawatan': 'danger',
         'Sudah Bayar': 'success',
         'Belum Bayar': 'danger',
         'Refund': 'warning'

@@ -18,6 +18,7 @@
         <ul class="sidebar-menu">
             <li><a href="/dashboard.html"><span>📊</span> Dashboard</a></li>
             <li><a href="/reservasi.html" class="active"><span>📅</span> Reservasi</a></li>
+            <li><a href="/pembayaran.html"><span>💳</span> Pembayaran</a></li>
             <li><a href="/kamar.html"><span>🛏️</span> Kelola Kamar</a></li>
             <li><a href="/tipe-kamar.html"><span>🏷️</span> Tipe Kamar</a></li>
             <li><a href="/tamu.html"><span>👥</span> Data Tamu</a></li>
@@ -180,7 +181,7 @@
                         render: (row) => `
                             <div class="action-buttons">
                                 <button class="btn btn-sm btn-info" onclick="updateStatus(${row.id_reservasi}, '${row.status_reservasi}')">Status</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteData(${row.id_reservasi})">Batal</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteReservasi(${row.id_reservasi})">Batal</button>
                             </div>
                         `
                     }
@@ -207,13 +208,18 @@
                     tamuSelect.innerHTML += `<option value="${tamu.id_tamu}">${tamu.nama_lengkap} - ${tamu.no_telepon || ''}</option>`;
                 });
 
-                // Load kamar tersedia
+                // Load HANYA kamar yang tersedia
                 const kamarData = await getData('/api/kamar/tersedia');
                 const kamarSelect = document.getElementById('id_kamar');
                 kamarSelect.innerHTML = '<option value="">Pilih Kamar</option>';
-                kamarData.forEach(kamar => {
-                    kamarSelect.innerHTML += `<option value="${kamar.id_kamar}">No. ${kamar.no_kamar} - ${kamar.nama_tipe} (${formatCurrency(kamar.harga_per_malam)}/malam)</option>`;
-                });
+                
+                if (kamarData.length === 0) {
+                    kamarSelect.innerHTML += '<option value="" disabled>Tidak ada kamar tersedia</option>';
+                } else {
+                    kamarData.forEach(kamar => {
+                        kamarSelect.innerHTML += `<option value="${kamar.id_kamar}">No. ${kamar.no_kamar} - ${kamar.nama_tipe} (${formatCurrency(kamar.harga_per_malam)}/malam)</option>`;
+                    });
+                }
             } catch (error) {
                 console.error('Error loading dropdowns:', error);
             }
@@ -285,12 +291,19 @@
             }
         });
 
-        // Delete data
-        async function deleteData(id) {
+        // Delete/Cancel reservasi
+        async function deleteReservasi(id) {
             if (!confirm('Yakin ingin membatalkan reservasi ini?')) return;
             
             try {
-                const result = await deleteData(`/api/reservasi/${id}`);
+                const response = await fetch(`${window.API_URL}/api/reservasi/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
                 
                 if (result.success) {
                     showSuccess('Reservasi berhasil dibatalkan!');

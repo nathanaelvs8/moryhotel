@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Pembayaran - Mory Hotel</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏨 Mory Hotel</h2>
+            <p>Admin Panel</p>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li><a href="/dashboard.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="/reservasi.html"><span>📅</span> Reservasi</a></li>
+            <li><a href="/pembayaran.html" class="active"><span>💳</span> Pembayaran</a></li>
+            <li><a href="/kamar.html"><span>🛏️</span> Kelola Kamar</a></li>
+            <li><a href="/tipe-kamar.html"><span>🏷️</span> Tipe Kamar</a></li>
+            <li><a href="/tamu.html"><span>👥</span> Data Tamu</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Kelola Pembayaran</h1>
+        </div>
+
+        <div class="content-box">
+            <div id="loadingData" class="loading">Memuat data</div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Kode Booking</th>
+                        <th>Nama Tamu</th>
+                        <th>No. Kamar</th>
+                        <th>Tipe Kamar</th>
+                        <th>Jumlah</th>
+                        <th>Metode</th>
+                        <th>Tanggal Bayar</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Update Pembayaran -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Update Pembayaran</h2>
+                <button class="close-modal" onclick="closeModal('formModal')">&times;</button>
+            </div>
+
+            <form id="pembayaranForm">
+                <input type="hidden" id="id_pembayaran">
+                
+                <div class="form-group">
+                    <label>Kode Booking</label>
+                    <input type="text" id="kode_booking" readonly style="background: #f0f0f0;">
+                </div>
+
+                <div class="form-group">
+                    <label>Nama Tamu</label>
+                    <input type="text" id="nama_lengkap" readonly style="background: #f0f0f0;">
+                </div>
+
+                <div class="form-group">
+                    <label>Jumlah Pembayaran (Rp)</label>
+                    <input type="number" id="jumlah_pembayaran" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Tanggal Pembayaran</label>
+                    <input type="date" id="tanggal_pembayaran">
+                </div>
+
+                <div class="form-group">
+                    <label>Metode Pembayaran</label>
+                    <select id="metode_pembayaran">
+                        <option value="">Belum Dipilih</option>
+                        <option value="Tunai">Tunai</option>
+                        <option value="Transfer">Transfer Bank</option>
+                        <option value="Kartu Kredit">Kartu Kredit</option>
+                        <option value="E-Wallet">E-Wallet (OVO/GoPay/Dana)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Status Pembayaran</label>
+                    <select id="status_pembayaran" required>
+                        <option value="Belum Bayar">Belum Bayar</option>
+                        <option value="Sudah Bayar">Sudah Bayar</option>
+                        <option value="Refund">Refund</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('formModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+        checkAuth();
+
+        // Load data
+        async function loadData() {
+            try {
+                const data = await getData('/api/pembayaran');
+                
+                const tbody = document.getElementById('dataBody');
+                
+                const columns = [
+                    { field: 'kode_booking' },
+                    { field: 'nama_lengkap' },
+                    { field: 'no_kamar' },
+                    { field: 'nama_tipe' },
+                    { 
+                        field: 'jumlah_pembayaran',
+                        render: (row) => formatCurrency(row.jumlah_pembayaran)
+                    },
+                    { 
+                        field: 'metode_pembayaran',
+                        render: (row) => row.metode_pembayaran || '-'
+                    },
+                    { 
+                        field: 'tanggal_pembayaran',
+                        render: (row) => row.tanggal_pembayaran ? new Date(row.tanggal_pembayaran).toLocaleDateString('id-ID') : '-'
+                    },
+                    { 
+                        field: 'status_pembayaran',
+                        render: (row) => `<span class="badge ${getStatusBadgeClass(row.status_pembayaran)}">${row.status_pembayaran}</span>`
+                    },
+                    {
+                        field: 'actions',
+                        render: (row) => `
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-info" onclick="editData(${row.id_pembayaran})">Update</button>
+                            </div>
+                        `
+                    }
+                ];
+                
+                renderTable(data, columns, tbody);
+                
+                hideLoading('loadingData');
+                document.getElementById('dataTable').style.display = 'table';
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Gagal memuat data');
+            }
+        }
+
+        // Edit data
+        async function editData(id) {
+            try {
+                const data = await getData(`/api/pembayaran/${id}`);
+                
+                document.getElementById('id_pembayaran').value = data.id_pembayaran;
+                document.getElementById('kode_booking').value = data.kode_booking;
+                document.getElementById('nama_lengkap').value = data.nama_lengkap;
+                document.getElementById('jumlah_pembayaran').value = data.jumlah_pembayaran;
+                document.getElementById('tanggal_pembayaran').value = data.tanggal_pembayaran ? formatDateInput(data.tanggal_pembayaran) : '';
+                document.getElementById('metode_pembayaran').value = data.metode_pembayaran || '';
+                document.getElementById('status_pembayaran').value = data.status_pembayaran;
+                
+                openModal('formModal');
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Gagal memuat data');
+            }
+        }
+
+        // Submit form
+        document.getElementById('pembayaranForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('id_pembayaran').value;
+            const data = {
+                tanggal_pembayaran: document.getElementById('tanggal_pembayaran').value || null,
+                jumlah_pembayaran: document.getElementById('jumlah_pembayaran').value,
+                metode_pembayaran: document.getElementById('metode_pembayaran').value || null,
+                status_pembayaran: document.getElementById('status_pembayaran').value
+            };
+            
+            try {
+                const result = await putData(`/api/pembayaran/${id}`, data);
+                
+                if (result.success) {
+                    showSuccess('Pembayaran berhasil diupdate!');
+                    closeModal('formModal');
+                    loadData();
+                } else {
+                    showError('Gagal update pembayaran');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        });
+
+        loadData();
+    </script>
+</body>
+</html>
