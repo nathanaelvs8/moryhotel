@@ -380,6 +380,43 @@ app.get('/api/reservasi', (req, res) => {
     });
 });
 
+// GET next booking code (untuk preview)
+app.get('/api/reservasi/next-code', (req, res) => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const prefix = `BK${year}${month}${day}`;
+    
+    const findLastCodeSql = `
+        SELECT kode_booking 
+        FROM reservasi 
+        WHERE kode_booking LIKE '${prefix}%' 
+        ORDER BY kode_booking DESC 
+        LIMIT 1
+    `;
+    
+    db.query(findLastCodeSql, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        let newNumber = 1;
+        
+        if (results.length > 0) {
+            const lastCode = results[0].kode_booking;
+            const lastNumber = parseInt(lastCode.slice(-3));
+            newNumber = lastNumber + 1;
+        }
+        
+        const nextCode = `${prefix}${String(newNumber).padStart(3, '0')}`;
+        
+        res.json({ 
+            next_code: nextCode,
+            count_today: newNumber - 1,
+            remaining: 999 - (newNumber - 1)
+        });
+    });
+});
+
 // GET reservasi by ID
 app.get('/api/reservasi/:id', (req, res) => {
     const { id } = req.params;
@@ -405,23 +442,65 @@ app.get('/api/reservasi/:id', (req, res) => {
 
 // POST buat reservasi baru
 app.post('/api/reservasi', (req, res) => {
-    const { kode_booking, id_tamu, id_kamar, id_staf, tanggal_check_in, tanggal_check_out, total_biaya } = req.body;
-    const sql = `
-        INSERT INTO reservasi 
-        (kode_booking, id_tamu, id_kamar, id_staf, tanggal_check_in, tanggal_check_out, total_biaya, status_reservasi) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'Dipesan')
+    const { id_tamu, id_kamar, id_staf, tanggal_check_in, tanggal_check_out, total_biaya } = req.body;
+    
+    // Generate kode booking otomatis berdasarkan tanggal hari ini
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const prefix = `BK${year}${month}${day}`;
+    
+    // Cari kode booking terakhir hari ini
+    const findLastCodeSql = `
+        SELECT kode_booking 
+        FROM reservasi 
+        WHERE kode_booking LIKE '${prefix}%' 
+        ORDER BY kode_booking DESC 
+        LIMIT 1
     `;
     
-    db.query(sql, [kode_booking, id_tamu, id_kamar, id_staf, tanggal_check_in, tanggal_check_out, total_biaya], (err, result) => {
+    db.query(findLastCodeSql, (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         
-        // Update status kamar jadi 'Dipesan'
-        db.query('UPDATE kamar SET status_kamar = "Dipesan" WHERE id_kamar = ?', [id_kamar]);
+        let newNumber = 1;
         
-        res.status(201).json({ 
-            success: true,
-            message: 'Reservasi berhasil dibuat',
-            id: result.insertId 
+        if (results.length > 0) {
+            // Ambil 3 digit terakhir dari kode booking terakhir
+            const lastCode = results[0].kode_booking;
+            const lastNumber = parseInt(lastCode.slice(-3));
+            newNumber = lastNumber + 1;
+            
+            // Validasi max 999 per hari
+            if (newNumber > 999) {
+                return res.status(400).json({ 
+                    error: 'Maksimal 999 reservasi per hari sudah tercapai' 
+                });
+            }
+        }
+        
+        // Format nomor jadi 3 digit (001, 002, dst)
+        const kode_booking = `${prefix}${String(newNumber).padStart(3, '0')}`;
+        
+        // Insert reservasi dengan kode booking yang sudah di-generate
+        const insertSql = `
+            INSERT INTO reservasi 
+            (kode_booking, id_tamu, id_kamar, id_staf, tanggal_check_in, tanggal_check_out, total_biaya, status_reservasi) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'Dipesan')
+        `;
+        
+        db.query(insertSql, [kode_booking, id_tamu, id_kamar, id_staf, tanggal_check_in, tanggal_check_out, total_biaya], (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            // Update status kamar jadi 'Dipesan'
+            db.query('UPDATE kamar SET status_kamar = "Dipesan" WHERE id_kamar = ?', [id_kamar]);
+            
+            res.status(201).json({ 
+                success: true,
+                message: 'Reservasi berhasil dibuat',
+                kode_booking: kode_booking,
+                id: result.insertId 
+            });
         });
     });
 });

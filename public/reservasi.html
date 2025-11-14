@@ -68,7 +68,8 @@
             <form id="reservasiForm">
                 <div class="form-group">
                     <label>Kode Booking</label>
-                    <input type="text" id="kode_booking" required readonly>
+                    <input type="text" value="Auto-generate dari sistem" readonly style="background: #f0f0f0; cursor: not-allowed;">
+                    <small style="color: #666; font-size: 12px;">Kode booking akan dibuat otomatis: BK[Tahun][Bulan][Tanggal][Nomor]</small>
                 </div>
 
                 <div class="form-group">
@@ -221,7 +222,6 @@
         // Show add modal
         function showAddModal() {
             document.getElementById('reservasiForm').reset();
-            document.getElementById('kode_booking').value = generateBookingCode();
             loadDropdowns();
             openModal('formModal');
         }
@@ -231,7 +231,6 @@
             e.preventDefault();
             
             const data = {
-                kode_booking: document.getElementById('kode_booking').value,
                 id_tamu: document.getElementById('id_tamu').value,
                 id_kamar: document.getElementById('id_kamar').value,
                 id_staf: user.id_staf,
@@ -244,7 +243,7 @@
                 const result = await postData('/api/reservasi', data);
                 
                 if (result.success) {
-                    showSuccess('Reservasi berhasil ditambahkan!');
+                    alert(`Reservasi berhasil ditambahkan!\n\nKode Booking: ${result.kode_booking}\n\nSilakan catat kode booking ini.`);
                     closeModal('formModal');
                     loadData();
                 } else {
