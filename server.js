@@ -16,8 +16,13 @@ app.use(express.static('public')); // Serve static files dari folder public
 
 // ===== ROUTE TESTING =====
 
-// Route utama
+// Route utama - redirect ke login page
 app.get('/', (req, res) => {
+    res.redirect('/login.html');
+});
+
+// API info endpoint
+app.get('/api', (req, res) => {
     res.json({ 
         message: '🏨 Hotel Booking System API',
         status: 'running',
