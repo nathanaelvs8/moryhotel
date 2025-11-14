@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Tamu - Mory Hotel</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏨 Mory Hotel</h2>
+            <p>Admin Panel</p>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li><a href="/dashboard.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="/reservasi.html"><span>📅</span> Reservasi</a></li>
+            <li><a href="/kamar.html"><span>🛏️</span> Kelola Kamar</a></li>
+            <li><a href="/tipe-kamar.html"><span>🏷️</span> Tipe Kamar</a></li>
+            <li><a href="/tamu.html" class="active"><span>👥</span> Data Tamu</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Data Tamu</h1>
+            <button class="btn btn-primary" onclick="showAddModal()">+ Tambah Tamu</button>
+        </div>
+
+        <div class="content-box">
+            <div id="loadingData" class="loading">Memuat data</div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Nama Lengkap</th>
+                        <th>Email</th>
+                        <th>No. Telepon</th>
+                        <th>Alamat</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Tamu</h2>
+                <button class="close-modal" onclick="closeModal('formModal')">&times;</button>
+            </div>
+
+            <form id="tamuForm">
+                <input type="hidden" id="id_tamu">
+                
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="nama_lengkap" required placeholder="Nama lengkap tamu">
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="email@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>No. Telepon</label>
+                    <input type="tel" id="no_telepon" placeholder="08123456789">
+                </div>
+
+                <div class="form-group">
+                    <label>Alamat</label>
+                    <textarea id="alamat" placeholder="Alamat lengkap"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('formModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+        checkAuth();
+
+        // Load data
+        async function loadData() {
+            try {
+                const data = await getData('/api/tamu');
+                
+                const tbody = document.getElementById('dataBody');
+                
+                const columns = [
+                    { field: 'nama_lengkap' },
+                    { field: 'email' },
+                    { field: 'no_telepon' },
+                    { field: 'alamat' },
+                    {
+                        field: 'actions',
+                        render: (row) => `
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-info" onclick="editData(${row.id_tamu})">Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteData(${row.id_tamu})">Hapus</button>
+                            </div>
+                        `
+                    }
+                ];
+                
+                renderTable(data, columns, tbody);
+                
+                hideLoading('loadingData');
+                document.getElementById('dataTable').style.display = 'table';
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Gagal memuat data');
+            }
+        }
+
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'Tambah Tamu';
+            document.getElementById('tamuForm').reset();
+            document.getElementById('id_tamu').value = '';
+            openModal('formModal');
+        }
+
+        // Edit data
+        async function editData(id) {
+            try {
+                const data = await getData(`/api/tamu/${id}`);
+                
+                document.getElementById('modalTitle').textContent = 'Edit Tamu';
+                document.getElementById('id_tamu').value = data.id_tamu;
+                document.getElementById('nama_lengkap').value = data.nama_lengkap;
+                document.getElementById('email').value = data.email || '';
+                document.getElementById('no_telepon').value = data.no_telepon || '';
+                document.getElementById('alamat').value = data.alamat || '';
+                
+                openModal('formModal');
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Gagal memuat data');
+            }
+        }
+
+        // Submit form
+        document.getElementById('tamuForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('id_tamu').value;
+            const data = {
+                nama_lengkap: document.getElementById('nama_lengkap').value,
+                email: document.getElementById('email').value,
+                no_telepon: document.getElementById('no_telepon').value,
+                alamat: document.getElementById('alamat').value
+            };
+            
+            try {
+                let result;
+                if (id) {
+                    result = await putData(`/api/tamu/${id}`, data);
+                } else {
+                    result = await postData('/api/tamu', data);
+                }
+                
+                if (result.success) {
+                    showSuccess(id ? 'Data tamu berhasil diupdate!' : 'Tamu berhasil ditambahkan!');
+                    closeModal('formModal');
+                    loadData();
+                } else {
+                    showError('Gagal menyimpan data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        });
+
+        // Delete data
+        async function deleteData(id) {
+            if (!confirm('Yakin ingin menghapus data tamu ini?')) return;
+            
+            try {
+                const result = await fetchAPI(`/api/tamu/${id}`, { method: 'DELETE' });
+                
+                if (result.success) {
+                    showSuccess('Data tamu berhasil dihapus!');
+                    loadData();
+                } else {
+                    showError('Gagal menghapus data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

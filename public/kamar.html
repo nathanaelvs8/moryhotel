@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Kamar - Mory Hotel</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏨 Mory Hotel</h2>
+            <p>Admin Panel</p>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li><a href="/dashboard.html"><span>📊</span> Dashboard</a></li>
+            <li><a href="/reservasi.html"><span>📅</span> Reservasi</a></li>
+            <li><a href="/kamar.html" class="active"><span>🛏️</span> Kelola Kamar</a></li>
+            <li><a href="/tipe-kamar.html"><span>🏷️</span> Tipe Kamar</a></li>
+            <li><a href="/tamu.html"><span>👥</span> Data Tamu</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Kelola Kamar</h1>
+            <button class="btn btn-primary" onclick="showAddModal()">+ Tambah Kamar</button>
+        </div>
+
+        <div class="content-box">
+            <div id="loadingData" class="loading">Memuat data</div>
+            <table id="dataTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>No. Kamar</th>
+                        <th>Tipe Kamar</th>
+                        <th>Harga/Malam</th>
+                        <th>Fasilitas</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Tambah Kamar</h2>
+                <button class="close-modal" onclick="closeModal('formModal')">&times;</button>
+            </div>
+
+            <form id="kamarForm">
+                <input type="hidden" id="id_kamar">
+                
+                <div class="form-group">
+                    <label>Nomor Kamar</label>
+                    <input type="text" id="no_kamar" required placeholder="Contoh: 101">
+                </div>
+
+                <div class="form-group">
+                    <label>Tipe Kamar</label>
+                    <select id="id_tipe_kamar" required>
+                        <option value="">Pilih Tipe Kamar</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Status Kamar</label>
+                    <select id="status_kamar" required>
+                        <option value="Tersedia">Tersedia</option>
+                        <option value="Dipesan">Dipesan</option>
+                        <option value="Perawatan">Perawatan</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('formModal')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/config.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+        checkAuth();
+
+        // Load data
+        async function loadData() {
+            try {
+                const data = await getData('/api/kamar');
+                
+                const tbody = document.getElementById('dataBody');
+                
+                const columns = [
+                    { field: 'no_kamar' },
+                    { field: 'nama_tipe' },
+                    { 
+                        field: 'harga_per_malam',
+                        render: (row) => formatCurrency(row.harga_per_malam)
+                    },
+                    { field: 'fasilitas' },
+                    { 
+                        field: 'status_kamar',
+                        render: (row) => `<span class="badge ${getStatusBadgeClass(row.status_kamar)}">${row.status_kamar}</span>`
+                    },
+                    {
+                        field: 'actions',
+                        render: (row) => `
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-info" onclick="editData(${row.id_kamar})">Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteData(${row.id_kamar})">Hapus</button>
+                            </div>
+                        `
+                    }
+                ];
+                
+                renderTable(data, columns, tbody);
+                
+                hideLoading('loadingData');
+                document.getElementById('dataTable').style.display = 'table';
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Gagal memuat data');
+            }
+        }
+
+        // Load tipe kamar for dropdown
+        async function loadTipeKamar() {
+            try {
+                const data = await getData('/api/tipe-kamar');
+                const select = document.getElementById('id_tipe_kamar');
+                select.innerHTML = '<option value="">Pilih Tipe Kamar</option>';
+                data.forEach(tipe => {
+                    select.innerHTML += `<option value="${tipe.id_tipe_kamar}">${tipe.nama_tipe}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading tipe kamar:', error);
+            }
+        }
+
+        // Show add modal
+        function showAddModal() {
+            document.getElementById('modalTitle').textContent = 'Tambah Kamar';
+            document.getElementById('kamarForm').reset();
+            document.getElementById('id_kamar').value = '';
+            loadTipeKamar();
+            openModal('formModal');
+        }
+
+        // Edit data
+        async function editData(id) {
+            try {
+                const data = await getData('/api/kamar');
+                const kamar = data.find(k => k.id_kamar === id);
+                
+                if (kamar) {
+                    document.getElementById('modalTitle').textContent = 'Edit Kamar';
+                    document.getElementById('id_kamar').value = kamar.id_kamar;
+                    document.getElementById('no_kamar').value = kamar.no_kamar;
+                    document.getElementById('id_tipe_kamar').value = kamar.id_tipe_kamar;
+                    document.getElementById('status_kamar').value = kamar.status_kamar;
+                    
+                    await loadTipeKamar();
+                    document.getElementById('id_tipe_kamar').value = kamar.id_tipe_kamar;
+                    
+                    openModal('formModal');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Gagal memuat data');
+            }
+        }
+
+        // Submit form
+        document.getElementById('kamarForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('id_kamar').value;
+            const data = {
+                no_kamar: document.getElementById('no_kamar').value,
+                id_tipe_kamar: document.getElementById('id_tipe_kamar').value,
+                status_kamar: document.getElementById('status_kamar').value
+            };
+            
+            try {
+                let result;
+                if (id) {
+                    result = await putData(`/api/kamar/${id}`, data);
+                } else {
+                    result = await postData('/api/kamar', data);
+                }
+                
+                if (result.success) {
+                    showSuccess(id ? 'Kamar berhasil diupdate!' : 'Kamar berhasil ditambahkan!');
+                    closeModal('formModal');
+                    loadData();
+                } else {
+                    showError('Gagal menyimpan data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        });
+
+        // Delete data
+        async function deleteData(id) {
+            if (!confirm('Yakin ingin menghapus kamar ini?')) return;
+            
+            try {
+                const result = await fetchAPI(`/api/kamar/${id}`, { method: 'DELETE' });
+                
+                if (result.success) {
+                    showSuccess('Kamar berhasil dihapus!');
+                    loadData();
+                } else {
+                    showError('Gagal menghapus data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Terjadi kesalahan');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
