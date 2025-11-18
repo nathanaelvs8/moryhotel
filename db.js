@@ -1,6 +1,5 @@
 const mysql = require('mysql2');
 
-// Konfigurasi database
 const pool = mysql.createPool({
     host: process.env.MYSQLHOST || 'localhost',
     user: process.env.MYSQLUSER || 'root',
@@ -16,10 +15,12 @@ const pool = mysql.createPool({
 pool.getConnection((err, connection) => {
     if (err) {
         console.error('❌ Database connection failed:', err.message);
+        console.error('Error details:', err);
         return;
     }
     console.log('✅ Connected to MySQL database');
+    console.log('📊 Database:', process.env.MYSQLDATABASE || 'railway');
     connection.release();
 });
 
-module.exports = pool.promise();
+module.exports = pool; // TANPA .promise()
