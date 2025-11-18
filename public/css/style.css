@@ -6,10 +6,27 @@
     box-sizing: border-box;
 }
 
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1e40af;
+    --primary-light: #3b82f6;
+    --secondary: #64748b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #06b6d4;
+    --dark: #1e293b;
+    --light: #f8fafc;
+    --border: #e2e8f0;
+    --text: #334155;
+    --text-light: #64748b;
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f5f7fa;
-    color: #333;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--light);
+    color: var(--text);
+    line-height: 1.6;
 }
 
 /* ===== UTILITIES ===== */
@@ -37,113 +54,140 @@ body {
 /* ===== BUTTONS ===== */
 
 .btn {
-    padding: 12px 24px;
+    padding: 10px 20px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 600;
-    transition: all 0.3s;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active {
+    transform: translateY(0);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary);
     color: white;
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    background: var(--primary-dark);
 }
 
 .btn-secondary {
-    background: #6c757d;
+    background: var(--secondary);
     color: white;
 }
 
 .btn-secondary:hover {
-    background: #5a6268;
+    background: #475569;
 }
 
 .btn-success {
-    background: #28a745;
+    background: var(--success);
     color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
 }
 
 .btn-danger {
-    background: #dc3545;
+    background: var(--danger);
     color: white;
 }
 
+.btn-danger:hover {
+    background: #dc2626;
+}
+
 .btn-info {
-    background: #17a2b8;
+    background: var(--info);
     color: white;
+}
+
+.btn-info:hover {
+    background: #0891b2;
 }
 
 .btn-sm {
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: 13px;
 }
 
 /* ===== BADGES ===== */
 
 .badge {
     display: inline-block;
-    padding: 5px 12px;
-    border-radius: 20px;
+    padding: 4px 10px;
+    border-radius: 6px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .badge.success {
-    background: #d4edda;
-    color: #155724;
+    background: #d1fae5;
+    color: #065f46;
 }
 
 .badge.warning {
-    background: #fff3cd;
-    color: #856404;
+    background: #fef3c7;
+    color: #92400e;
 }
 
 .badge.danger {
-    background: #f8d7da;
-    color: #721c24;
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 .badge.info {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: #cffafe;
+    color: #155e75;
 }
 
 /* ===== FORM ELEMENTS ===== */
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
-    color: #333;
+    margin-bottom: 6px;
+    color: var(--text);
     font-weight: 500;
+    font-size: 14px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 10px 15px;
-    border: 2px solid #e0e0e0;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
     border-radius: 8px;
     font-size: 14px;
-    transition: border-color 0.3s;
+    transition: all 0.2s;
+    color: var(--text);
+    background: white;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .form-group textarea {
@@ -151,13 +195,21 @@ body {
     min-height: 100px;
 }
 
+.form-group small {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-light);
+    font-size: 12px;
+}
+
 /* ===== ALERTS ===== */
 
 .alert {
-    padding: 12px 20px;
+    padding: 12px 16px;
     border-radius: 8px;
     margin-bottom: 20px;
     display: none;
+    font-size: 14px;
 }
 
 .alert.show {
@@ -165,49 +217,56 @@ body {
 }
 
 .alert-success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
 }
 
 .alert-error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
 }
 
 .alert-info {
-    background: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
+    background: #cffafe;
+    color: #155e75;
+    border: 1px solid #67e8f9;
 }
 
 /* ===== TABLE ===== */
 
 table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     background: white;
 }
 
 table th {
     text-align: left;
-    padding: 12px;
-    background: #f8f9fa;
-    color: #666;
+    padding: 14px 16px;
+    background: var(--light);
+    color: var(--text);
     font-weight: 600;
-    font-size: 14px;
-    border-bottom: 2px solid #dee2e6;
+    font-size: 13px;
+    border-bottom: 2px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 table td {
-    padding: 12px;
-    border-top: 1px solid #eee;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
     font-size: 14px;
 }
 
+table tr:last-child td {
+    border-bottom: none;
+}
+
 table tr:hover {
-    background: #f8f9fa;
+    background: var(--light);
 }
 
 /* ===== MODAL ===== */
@@ -219,7 +278,8 @@ table tr:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     z-index: 1000;
     justify-content: center;
     align-items: center;
@@ -231,18 +291,19 @@ table tr:hover {
 
 .modal-content {
     background: white;
-    padding: 30px;
-    border-radius: 10px;
+    padding: 28px;
+    border-radius: 12px;
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
-    animation: slideDown 0.3s ease-out;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-@keyframes slideDown {
+@keyframes slideUp {
     from {
-        transform: translateY(-50px);
+        transform: translateY(20px);
         opacity: 0;
     }
     to {
@@ -255,14 +316,15 @@ table tr:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f0f0f0;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
 }
 
 .modal-header h2 {
-    font-size: 24px;
-    color: #333;
+    font-size: 20px;
+    color: var(--dark);
+    font-weight: 600;
 }
 
 .close-modal {
@@ -270,21 +332,23 @@ table tr:hover {
     border: none;
     font-size: 28px;
     cursor: pointer;
-    color: #666;
-    transition: color 0.3s;
+    color: var(--text-light);
+    transition: color 0.2s;
+    line-height: 1;
+    padding: 0;
 }
 
 .close-modal:hover {
-    color: #dc3545;
+    color: var(--danger);
 }
 
 .form-actions {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
-    margin-top: 20px;
+    margin-top: 24px;
     padding-top: 20px;
-    border-top: 2px solid #f0f0f0;
+    border-top: 2px solid var(--border);
 }
 
 /* ===== LOADING ===== */
@@ -292,8 +356,8 @@ table tr:hover {
 .loading {
     text-align: center;
     padding: 40px;
-    color: #666;
-    font-size: 16px;
+    color: var(--text-light);
+    font-size: 15px;
 }
 
 .loading:after {
@@ -311,7 +375,7 @@ table tr:hover {
 
 .action-buttons {
     display: flex;
-    gap: 5px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
@@ -324,11 +388,11 @@ table tr:hover {
     }
     
     table {
-        font-size: 12px;
+        font-size: 13px;
     }
     
     table th,
     table td {
-        padding: 8px;
+        padding: 10px;
     }
 }
