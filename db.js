@@ -2,11 +2,11 @@ const mysql = require('mysql2');
 
 // Konfigurasi database - bisa pake environment variable atau hardcode
 const db = mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'db_hotel_mory',
-    port: process.env.DB_PORT || 3306
+    host: process.env.MYSQLHOST || 'localhost',
+    user: process.env.MYSQLUSER || 'root',
+    password: process.env.MYSQLPASSWORD || '',
+    database: process.env.MYSQLNAME || 'db_hotel_mory',
+    port: process.env.MYSQLPORT || 3306
 });
 
 // Coba koneksi
